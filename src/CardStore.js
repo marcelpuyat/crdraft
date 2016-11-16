@@ -63,8 +63,8 @@ const cardImageMap = {
 	'valkyrie': 'valkyrie.png',
 	'witch': 'witch.png',
 	'wizard': 'wizard.png',
-	'x-bow': 'x-bow.png'
-	'zap': 'zap.png',
+	'x-bow': 'x-bow.png',
+	'zap': 'zap.png'
 }
 
 const CardStore = Fluxxor.createStore({
