@@ -124,10 +124,8 @@ const Draft = React.createClass({
   editName: function(e, playerNum) {
     const code = e.which;
     if (code === 13) {
-      e.preventDefault();
-    }
-    if(code==32||code==13||code==188||code==186){
       // Enter key was pressed
+      e.preventDefault();
       this.getFlux().actions.toggleNameEdit(playerNum);
     } else {
       this.getFlux().actions.editName(e.target.value, playerNum);
