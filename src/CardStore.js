@@ -14,6 +14,7 @@ const cardImageMap = {
 	'cannon': 'cannon.png',
 	'dark_prince': 'dark_prince.png',
 	'elixir_collector': 'elixir_collector.png',
+  'elite_barbarians': 'elite_barbarians.png',
 	'fire_spirits': 'fire_spirits.png',
 	'fireball': 'fireball.png',
 	'freeze': 'freeze.png',
