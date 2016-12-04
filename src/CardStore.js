@@ -76,6 +76,7 @@ const CardStore = Fluxxor.createStore({
     	3: [],
     	4: []
     };
+    this.bannedCards = new Set();
     this.playerNames = {
     	1: "Player One",
     	2: "Player Two",
@@ -85,22 +86,47 @@ const CardStore = Fluxxor.createStore({
     this.isEditingNameArray = [false, false, false, false];
     this.currentPlayer = 1;
     this.selectedCards = new Set();
-
+    this.isSnakingBack = false;
+    this.numBansLeft = 0;
 
     this.bindActions(
       constants.SELECT_CARD, this.onSelectCard,
       constants.TOGGLE_NAME_EDIT, this.onToggleNameEdit,
-      constants.EDIT_NAME, this.onEditName
+      constants.EDIT_NAME, this.onEditName,
+      constants.CONFIRM_DRAFT_OPTIONS, this.onConfirmDraftOptions,
+      constants.BAN_CARD, this.onBanCard
     );
   },
 
   onSelectCard: function({cardId, playerNum}) {
   	this.playerCards[playerNum].push(cardId);
   	this.selectedCards.add(cardId);
-  	this.currentPlayer++;
-  	if (this.currentPlayer == 5) {
-  		this.currentPlayer = 1;
-  	}
+    const numPlayers = this.flux.store("DraftOptionsStore").getNumPlayers();
+    const isSnakeDraft = this.flux.store("DraftOptionsStore").getIsSnakeDraft();
+    console.log(isSnakeDraft);
+    if (this.isSnakingBack) {
+      this.currentPlayer--;
+    } else {
+      this.currentPlayer++;
+    }
+    if (this.currentPlayer == 0) {
+      this.isSnakingBack = false;
+      this.currentPlayer = 1;
+    }
+    if (this.currentPlayer == numPlayers + 1) {
+      if (isSnakeDraft) {
+        this.isSnakingBack = true;
+        this.currentPlayer = numPlayers;
+      } else {
+        this.currentPlayer = 1;
+      }
+    }
+    this.emit("change");
+  },
+
+  onBanCard: function({cardId}) {
+    this.bannedCards.add(cardId);
+    this.numBansLeft--;
     this.emit("change");
   },
 
@@ -114,11 +140,24 @@ const CardStore = Fluxxor.createStore({
   	this.emit("change");
   },
 
+  onConfirmDraftOptions: function() {
+    this.numBansLeft = this.flux.store("DraftOptionsStore").getNumBans();
+    this.emit("change");
+  },
+
   getState: function() {
     return {
       playerCards: this.playerCards,
       currentPlayer: this.currentPlayer
     };
+  },
+
+  getIsDoingBans: function() {
+    return this.numBansLeft > 0;
+  },
+
+  getNumBansLeft: function() {
+    return this.numBansLeft;
   },
 
   getCardImageMap: function() {
@@ -147,6 +186,10 @@ const CardStore = Fluxxor.createStore({
 
   isDraftFinished: function() {
   	return this.selectedCards.size == 40;
+  },
+
+  isCardBanned: function(cardId) {
+    return this.bannedCards.has(cardId);
   }
 });
 

@@ -8,25 +8,123 @@ var FluxMixin = Fluxxor.FluxMixin(React),
 
 const Draft = React.createClass({
 
-  mixins: [FluxMixin, StoreWatchMixin("CardStore")],
+  mixins: [FluxMixin, StoreWatchMixin("CardStore", "DraftOptionsStore")],
 
   getStateFromFlux: function() {
     return this.getFlux().store("CardStore").getState();
   },
 
   render: function() {
+    if (this.getFlux().store("DraftOptionsStore").getHasConfirmedDraftOptions()) {
+      return (
+        <div>
+          {this.getTopLabel()}
+          {this.getCardPool()}
+          {this.getCardSelections()}
+        </div>
+      );
+    } else {
+      return this.getDraftOptionsPage();
+    }
+  },
+
+  getDraftOptionsPage: function() {
     return (
       <div>
-        {this.getTopLabel()}
-        {this.getCardPool()}
-        {this.getCardSelections()}
+        {this.getNumPlayersOptions()}
+        {this.getNumBansOptions()}
+        {this.getSnakeDraftOptions()}
+        {this.getConfirmButton()}
       </div>
     );
   },
 
+  getNumPlayersOptions: function() {
+    // const numPlayers = this.getFlux().store("DraftOptionsStore").getNumPlayers();
+    // return (
+    //   <div>
+    //     <h2 className="draft-options-label">
+    //       Number Of Players
+    //     </h2>
+    //     <div>
+    //       <h3 className={"draft-options-number " + (numPlayers == 4 ? "selected-num-players" : "")} onClick={() => this.selectNumPlayers(4)}>
+    //         4
+    //       </h3>
+    //       <h3 className={"draft-options-number " + (numPlayers == 8 ? "selected-num-players" : "")} onClick={() => this.selectNumPlayers(8)}>
+    //         8
+    //       </h3>
+    //     </div>
+    //   </div>
+    // );
+  },
 
+  selectNumPlayers: function(numPlayers) {
+    this.getFlux().actions.selectNumPlayers(numPlayers);
+  },
+
+  getNumBansOptions: function() {
+    const numBans = this.getFlux().store("DraftOptionsStore").getNumBans();
+    return (
+      <div>
+        <h2 className="draft-options-label">
+          Number Of Bans
+        </h2>
+        <div>
+          <h3 className={"draft-options-number " + (numBans == 0 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(0)}>
+            0
+          </h3>
+          <h3 className={"draft-options-number " + (numBans == 1 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(1)}>
+            1
+          </h3>
+          <h3 className={"draft-options-number " + (numBans == 2 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(2)}>
+            2
+          </h3>
+        </div>
+      </div>
+    );
+  },
+
+  selectNumBans: function(numBans) {
+    this.getFlux().actions.selectNumBans(numBans);
+  },
+
+  getSnakeDraftOptions: function() {
+    const isSnakeDraft = this.getFlux().store("DraftOptionsStore").getIsSnakeDraft();
+    return (
+      <div>
+        <h2 className="draft-options-label">
+          Draft Mode
+        </h2>
+        <div>
+          <h3 className={"draft-options-text " + (!isSnakeDraft ? "selected-snake-draft" : "")} onClick={() => this.toggleSnakeDraft(false)}>Regular</h3>
+          <h3 className={"draft-options-text " + (isSnakeDraft ? "selected-snake-draft" : "")} onClick={() => this.toggleSnakeDraft(true)}>Snake</h3>
+        </div>
+      </div>
+    );
+  },
+
+  toggleSnakeDraft: function(shouldTurnOn) {
+    this.getFlux().actions.toggleSnakeDraft(shouldTurnOn);
+  },
+
+  getConfirmButton: function() {
+    return (
+      <button onClick={this.confirmDraftOptions}>Confirm</button>
+    );
+  },
+
+  confirmDraftOptions: function() {
+    this.getFlux().actions.confirmDraftOptions();
+  },
 
   getTopLabel: function() {
+    if (this.getFlux().store("CardStore").getIsDoingBans()) {
+      return (
+        <h2 className="player-name">
+          Ban a card
+        </h2>
+      );
+    }
     if (this.getFlux().store("CardStore").isDraftFinished()) {
       return (
         <h2 className="player-name">
@@ -57,12 +155,24 @@ const Draft = React.createClass({
       }
       const imageSrc = "./cards/" + cardImageMap[cardId];
       let onClickFunction = () => this.selectCard(cardId);
-      if (cardStore.isDraftFinished()) {
+      if (cardStore.getIsDoingBans()) {
+        onClickFunction = () => this.banCard(cardId);
+      }
+      const isCardBanned = this.getFlux().store("CardStore").isCardBanned(cardId);
+      if (cardStore.isDraftFinished() || isCardBanned) {
         onClickFunction = null;
       }
-      images.push(
-        <img key={cardId} src={imageSrc} className="card" onClick={onClickFunction}/>
-      );
+      if (isCardBanned) {
+        images.push(
+          <div className="banned-card-slot">
+            <img key={cardId} src={imageSrc} className="card banned-card" onClick={onClickFunction}/>
+          </div>
+        );
+      } else {
+        images.push(
+          <img key={cardId} src={imageSrc} className="card" onClick={onClickFunction}/>
+        );
+      }
     }
     return (
       <div className="draft-pool">
@@ -74,6 +184,7 @@ const Draft = React.createClass({
   getCardSelections: function() {
     const playerNames = this.getFlux().store("CardStore").getPlayerNames();
     const cardImageMap = this.getFlux().store("CardStore").getCardImageMap();
+    const currentPlayer = this.getFlux().store("CardStore").getCurrentPlayer();
     const playerBoxes = [];
 
     for (const playerNum in playerNames) {
@@ -100,8 +211,10 @@ const Draft = React.createClass({
         nameSection = <input className="player-edit-name-input" onKeyUp={(e) => this.editName(e, playerNum)} 
         onBlur={() => this.toggleNameEdit(playerNum)}/>;
       }
+      const shouldHighlightBox = currentPlayer == playerNum && !this.getFlux().store("CardStore").isDraftFinished()
+        && !this.getFlux().store("CardStore").getIsDoingBans();
       playerBoxes.push(
-        <td className="player-box" key={playerNum}>
+        <td className={"player-box " + (shouldHighlightBox ? "player-box-current-turn" : "")} key={playerNum}>
           {nameSection}
           <div className="player-card-pool">
             {images}
@@ -134,6 +247,10 @@ const Draft = React.createClass({
 
   toggleNameEdit: function(playerNum) {
     this.getFlux().actions.toggleNameEdit(playerNum);
+  },
+
+  banCard: function(cardId) {
+    this.getFlux().actions.banCard(cardId);
   },
 
   selectCard: function(cardId) {

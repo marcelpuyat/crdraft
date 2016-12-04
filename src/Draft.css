@@ -37,3 +37,66 @@
 	font-size: 20px;
 	font-family: SupercellFont;
 }
+
+.player-box-current-turn {
+	background-color: lightgreen;
+}
+
+.player-box {
+	border-radius: 6px;
+}
+
+.draft-options-label {
+	font-family: SupercellFont;
+}
+
+.draft-options-number {
+	border: 2px solid transparent;
+	font-family: SupercellFont;
+	padding: 10px;
+	display: inline-block;
+	margin-left: 20px;
+	cursor: pointer;
+}
+
+.draft-options-text {
+	border: 2px solid transparent;
+	font-family: SupercellFont;
+	display: inline-block;
+	margin-left: 20px;
+	padding: 5px;
+	cursor: pointer;
+}
+
+.selected-snake-draft {
+	border: 2px solid red;
+	border-radius: 5px;
+}
+
+.selected-num-players {
+	border: 2px solid red;
+	border-radius: 5px;
+}
+
+.selected-num-bans {
+	border: 2px solid red;
+	border-radius: 5px;
+}
+
+.banned-card-slot {
+	display: inline-block;
+	position: relative;
+}
+
+.banned-card-slot:after {
+	position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    content: "\274c";
+    font-size: 50px; 
+    color: #FFF;
+    line-height: 100px;
+    text-align: center;
+}
