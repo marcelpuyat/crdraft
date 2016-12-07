@@ -100,7 +100,7 @@ const Draft = React.createClass({
     return (
       <div>
         <h2 className="draft-options-label">
-          Draft Mode
+          Draft Order
         </h2>
         <div>
           <h3 className={"draft-options-text " + (!isSnakeDraft ? "selected-snake-draft" : "")} onClick={() => this.toggleSnakeDraft(false)}>Regular</h3>
