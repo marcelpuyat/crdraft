@@ -70,20 +70,10 @@ const cardImageMap = {
 
 const CardStore = Fluxxor.createStore({
   initialize: function() {
-    this.playerCards = {
-    	1: [],
-    	2: [],
-    	3: [],
-    	4: []
-    };
+    this.playerCards = {};
     this.bannedCards = new Set();
-    this.playerNames = {
-    	1: "Player One",
-    	2: "Player Two",
-    	3: "Player Three",
-    	4: "Player Four"
-    };
-    this.isEditingNameArray = [false, false, false, false];
+    this.playerNames = {};
+    this.isEditingNameArray = [];
     this.currentPlayer = 1;
     this.selectedCards = new Set();
     this.isSnakingBack = false;
@@ -103,7 +93,6 @@ const CardStore = Fluxxor.createStore({
   	this.selectedCards.add(cardId);
     const numPlayers = this.flux.store("DraftOptionsStore").getNumPlayers();
     const isSnakeDraft = this.flux.store("DraftOptionsStore").getIsSnakeDraft();
-    console.log(isSnakeDraft);
     if (this.isSnakingBack) {
       this.currentPlayer--;
     } else {
@@ -142,6 +131,13 @@ const CardStore = Fluxxor.createStore({
 
   onConfirmDraftOptions: function() {
     this.numBansLeft = this.flux.store("DraftOptionsStore").getNumBans();
+    const numPlayers = this.flux.store("DraftOptionsStore").getNumPlayers();
+    for (let i = 0; i < numPlayers; i++) {
+      this.playerCards[i+1] = [];
+      this.playerNames[i+1] = "Player " + (i+1);
+      this.isEditingNameArray.push(false);
+    }
+
     this.emit("change");
   },
 
@@ -185,7 +181,8 @@ const CardStore = Fluxxor.createStore({
   },
 
   isDraftFinished: function() {
-  	return this.selectedCards.size == 40;
+    const numPlayers = this.flux.store("DraftOptionsStore").getNumPlayers();
+  	return this.selectedCards.size >= 40 && this.selectedCards.size >= numPlayers * 8;
   },
 
   isCardBanned: function(cardId) {

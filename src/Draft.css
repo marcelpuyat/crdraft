@@ -16,8 +16,6 @@
 }
 
 .draft-pool {
-	min-height: 50vh;
-	margin-bottom: 4vh;
 }
 
 .player-edit-name-input {
@@ -25,8 +23,17 @@
 	margin: 15px 0;
 }
 
+table.eight-players {
+	width: 80%;
+	margin: auto;
+}
+
 .card {
 	width: 6vw;
+}
+
+.card.eight-players {
+	width: 5vw;
 }
 
 .player-card-pool img {
@@ -36,6 +43,11 @@
 .player-name {
 	font-size: 20px;
 	font-family: SupercellFont;
+}
+
+.player-name.eight-players {
+	margin: 5px;
+	font-size: 15px;
 }
 
 .player-box-current-turn {

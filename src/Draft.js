@@ -40,22 +40,22 @@ const Draft = React.createClass({
   },
 
   getNumPlayersOptions: function() {
-    // const numPlayers = this.getFlux().store("DraftOptionsStore").getNumPlayers();
-    // return (
-    //   <div>
-    //     <h2 className="draft-options-label">
-    //       Number Of Players
-    //     </h2>
-    //     <div>
-    //       <h3 className={"draft-options-number " + (numPlayers == 4 ? "selected-num-players" : "")} onClick={() => this.selectNumPlayers(4)}>
-    //         4
-    //       </h3>
-    //       <h3 className={"draft-options-number " + (numPlayers == 8 ? "selected-num-players" : "")} onClick={() => this.selectNumPlayers(8)}>
-    //         8
-    //       </h3>
-    //     </div>
-    //   </div>
-    // );
+    const numPlayers = this.getFlux().store("DraftOptionsStore").getNumPlayers();
+    return (
+      <div>
+        <h2 className="draft-options-label">
+          Number Of Players
+        </h2>
+        <div>
+          <h3 className={"draft-options-number " + (numPlayers == 4 ? "selected-num-players" : "")} onClick={() => this.selectNumPlayers(4)}>
+            4
+          </h3>
+          <h3 className={"draft-options-number " + (numPlayers == 8 ? "selected-num-players" : "")} onClick={() => this.selectNumPlayers(8)}>
+            8
+          </h3>
+        </div>
+      </div>
+    );
   },
 
   selectNumPlayers: function(numPlayers) {
@@ -64,21 +64,28 @@ const Draft = React.createClass({
 
   getNumBansOptions: function() {
     const numBans = this.getFlux().store("DraftOptionsStore").getNumBans();
+    const numCards = Object.keys(this.getFlux().store("CardStore").getCardImageMap()).length;
+    const numPlayers = this.getFlux().store("DraftOptionsStore").getNumPlayers();
+    const numPossibleBans = numCards - numPlayers * 8;
+    let banOptions = [
+      <h3 className={"draft-options-number " + (numBans == 0 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(0)}>
+        0
+      </h3>
+    ];
+    for (let i = 1; i <= numPossibleBans && i <= 2; i++) {
+      banOptions.push(
+        <h3 id={"bans-" + i} className={"draft-options-number " + (numBans == i ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(i)}>
+          {i}
+        </h3>
+      );
+    }
     return (
       <div>
         <h2 className="draft-options-label">
           Number Of Bans
         </h2>
         <div>
-          <h3 className={"draft-options-number " + (numBans == 0 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(0)}>
-            0
-          </h3>
-          <h3 className={"draft-options-number " + (numBans == 1 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(1)}>
-            1
-          </h3>
-          <h3 className={"draft-options-number " + (numBans == 2 ? "selected-num-bans" : "")} onClick={() => this.selectNumBans(2)}>
-            2
-          </h3>
+          {banOptions}
         </div>
       </div>
     );
@@ -118,6 +125,9 @@ const Draft = React.createClass({
   },
 
   getTopLabel: function() {
+    if (this.getFlux().store("DraftOptionsStore").getNumPlayers() == 8) {
+      return;
+    }
     if (this.getFlux().store("CardStore").getIsDoingBans()) {
       return (
         <h2 className="player-name">
@@ -149,6 +159,7 @@ const Draft = React.createClass({
     const cardStore = this.getFlux().store("CardStore");
     const cardImageMap = cardStore.getCardImageMap();
     const selectedCards = cardStore.getSelectedCards();
+    const numPlayers = this.getFlux().store("DraftOptionsStore").getNumPlayers();
     for (const cardId in cardImageMap) {
       if (selectedCards.has(cardId)) {
         continue;
@@ -162,15 +173,16 @@ const Draft = React.createClass({
       if (cardStore.isDraftFinished() || isCardBanned) {
         onClickFunction = null;
       }
+      const cardClassName = numPlayers == 8 ? "card eight-players" : "card";
       if (isCardBanned) {
         images.push(
           <div className="banned-card-slot">
-            <img key={cardId} src={imageSrc} className="card banned-card" onClick={onClickFunction}/>
+            <img key={cardId} src={imageSrc} className={cardClassName + " banned-card"} onClick={onClickFunction}/>
           </div>
         );
       } else {
         images.push(
-          <img key={cardId} src={imageSrc} className="card" onClick={onClickFunction}/>
+          <img key={cardId} src={imageSrc} className={cardClassName} onClick={onClickFunction}/>
         );
       }
     }
@@ -185,13 +197,16 @@ const Draft = React.createClass({
     const playerNames = this.getFlux().store("CardStore").getPlayerNames();
     const cardImageMap = this.getFlux().store("CardStore").getCardImageMap();
     const currentPlayer = this.getFlux().store("CardStore").getCurrentPlayer();
-    const playerBoxes = [];
+    const numPlayers = Object.keys(playerNames).length;
+    const playerBoxesFirstRow = [];
+    const playerBoxesSecondRow = [];
 
     for (const playerNum in playerNames) {
       const playerName = playerNames[playerNum];
       let images = [];
       const playerCards = this.getFlux().store("CardStore").getPlayerCards()[playerNum];
-      for (let i = 0; i < 10; i++) {
+      const numCardSelections = numPlayers == 4 ? 10 : 8;
+      for (let i = 0; i < numCardSelections; i++) {
 
         let imageSrc = "./cards/mystery.png";
 
@@ -202,8 +217,9 @@ const Draft = React.createClass({
           <img key={playerNum + " " + i} src={imageSrc} className="card"/>
         );
       }
+      const playerNameClass = numPlayers == 8 ? "player-name eight-players" : "player-name";
       let nameSection = (
-        <h3 className="player-name" onClick={() => this.toggleNameEdit(playerNum)}>
+        <h3 className={playerNameClass} onClick={() => this.toggleNameEdit(playerNum)}>
             {playerName}
         </h3>
       );
@@ -211,24 +227,51 @@ const Draft = React.createClass({
         nameSection = <input className="player-edit-name-input" onKeyUp={(e) => this.editName(e, playerNum)} 
         onBlur={() => this.toggleNameEdit(playerNum)}/>;
       }
+      let playerCardPoolClassName = "player-card-pool";
+      if (numCardSelections == 8) {
+        playerCardPoolClassName += " eight-players";
+      }
       const shouldHighlightBox = currentPlayer == playerNum && !this.getFlux().store("CardStore").isDraftFinished()
         && !this.getFlux().store("CardStore").getIsDoingBans();
-      playerBoxes.push(
-        <td className={"player-box " + (shouldHighlightBox ? "player-box-current-turn" : "")} key={playerNum}>
-          {nameSection}
-          <div className="player-card-pool">
-            {images}
-          </div>
-        </td>
+      if (playerNum > 4) {
+        playerBoxesSecondRow.push(
+          <td className={"player-box " + (shouldHighlightBox ? "player-box-current-turn" : "")} key={playerNum}>
+            {nameSection}
+            <div className={playerCardPoolClassName}>
+              {images}
+            </div>
+          </td>
+        );
+      } else {
+        playerBoxesFirstRow.push(
+          <td className={"player-box " + (shouldHighlightBox ? "player-box-current-turn" : "")} key={playerNum}>
+            {nameSection}
+            <div className={playerCardPoolClassName}>
+              {images}
+            </div>
+          </td>
+        );
+      }
+    }
+
+    let tRows = [
+      <tr id="first-row">
+        {playerBoxesFirstRow}
+      </tr>
+    ];
+    if (playerBoxesSecondRow.length > 0) {
+      tRows.push(
+        <tr id="second-row">
+          {playerBoxesSecondRow}
+        </tr>
       );
     }
 
+    const tableClassName = numPlayers == 8 ? "eight-players" : "";
     return (
-      <table>
+      <table className={tableClassName}>
         <tbody>
-          <tr>
-            {playerBoxes}
-          </tr>
+          {tRows}
         </tbody>
       </table>
     );

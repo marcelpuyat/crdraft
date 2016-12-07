@@ -19,6 +19,10 @@ const DraftOptionsStore = Fluxxor.createStore({
 
   onSelectNumPlayers: function({numPlayers}) {
   	this.numPlayers = numPlayers;
+    const numPossibleBans = Object.keys(this.flux.store("CardStore").getCardImageMap()).length - numPlayers * 8;
+    if (this.numBans > numPossibleBans) {
+      this.numBans = numPossibleBans;
+    }
     this.emit("change");
   },
 
